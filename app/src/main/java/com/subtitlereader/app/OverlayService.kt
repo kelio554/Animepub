@@ -19,9 +19,9 @@ import android.widget.TextView
 import androidx.core.app.NotificationCompat
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
+import com.google.mlkit.vision.text.TextRecognizer
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
-import com.googlecode.tesseract.android.TessBaseAPI
-import java.io.File
+import com.google.mlkit.vision.text.thai.ThaiTextRecognizerOptions
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -36,8 +36,12 @@ class OverlayService : Service() {
     private var virtualDisplay: VirtualDisplay? = null
     private var imageReader: ImageReader? = null
 
-    private val mlkitRecognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
-    private var tessApi: TessBaseAPI? = null
+    // ML Kit Thai (หลัก) + Latin (fallback)
+    private val thaiRecognizer: TextRecognizer =
+        TextRecognition.getClient(ThaiTextRecognizerOptions.Builder().build())
+    private val latinRecognizer: TextRecognizer =
+        TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+
     private lateinit var ttsHelper: TTSHelper
 
     private val CHANNEL_ID = "subtitle_reader_channel"
@@ -50,8 +54,6 @@ class OverlayService : Service() {
     private var isGhost = false
     private var lastText = ""
     private val isCapturing = AtomicBoolean(false)
-    private val tessReady = AtomicBoolean(false)
-    private val executor = Executors.newSingleThreadExecutor()
     private val mainHandler = Handler(Looper.getMainLooper())
     private var autoRunnable: Runnable? = null
 
@@ -61,11 +63,9 @@ class OverlayService : Service() {
         const val K_W = "w"; const val K_H = "h"
         const val K_AUTO = "auto"; const val K_GHOST = "ghost"
         const val K_SPEED = "speed"
-        const val AUTO_MS = 1300L
+        const val AUTO_MS = 1500L
         const val ACTION_STOP = "STOP"
         const val ACTION_SPEED = "SET_SPEED"
-        val TESS_LANGS = listOf("tha", "eng")
-        val TESS_BASE_URL = "https://cdn.jsdelivr.net/gh/tesseract-ocr/tessdata_fast@main"
     }
 
     // ── Lifecycle ──────────────────────────────────────────────────────────
@@ -88,9 +88,6 @@ class OverlayService : Service() {
             @Suppress("DEPRECATION") wm.defaultDisplay.getRealSize(sz)
             screenWidth = sz.x; screenHeight = sz.y
         }
-
-        // Init Tesseract ใน background
-        executor.execute { initTesseract() }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -139,63 +136,11 @@ class OverlayService : Service() {
         virtualDisplay?.release(); imageReader?.close()
         mediaProjection?.stop()
         ttsHelper.shutdown()
-        mlkitRecognizer.close()
-        tessApi?.recycle()
-        executor.shutdown()
+        thaiRecognizer.close()
+        latinRecognizer.close()
     }
 
     override fun onBind(intent: Intent?) = null
-
-    // ── Tesseract init + download ──────────────────────────────────────────
-
-    private fun initTesseract() {
-        val dir = File(filesDir, "tessdata").also { it.mkdirs() }
-
-        mainHandler.post { try { label()?.text = "⬇️ กำลังโหลด Thai OCR..." } catch (_: Exception) {} }
-
-        var allReady = true
-        for (lang in TESS_LANGS) {
-            val f = File(dir, "$lang.traineddata")
-            if (!f.exists()) {
-                try {
-                    mainHandler.post {
-                        try { label()?.text = "⬇️ download $lang.traineddata..." } catch (_: Exception) {}
-                    }
-                    val url = java.net.URL("$TESS_BASE_URL/$lang.traineddata")
-                    val conn = url.openConnection() as java.net.HttpURLConnection
-                    conn.connectTimeout = 15_000; conn.readTimeout = 60_000
-                    conn.inputStream.use { ins -> f.outputStream().use { out -> ins.copyTo(out) } }
-                    Log.i("Tess", "Downloaded $lang")
-                } catch (e: Exception) {
-                    Log.e("Tess", "Download $lang failed: ${e.message}")
-                    f.delete()
-                    allReady = false
-                }
-            }
-        }
-
-        if (allReady) {
-            val api = TessBaseAPI()
-            if (api.init(filesDir.absolutePath, "tha+eng")) {
-                tessApi = api
-                tessReady.set(true)
-                Log.i("Tess", "Thai OCR ready")
-                mainHandler.post {
-                    try { label()?.text = "✅ Thai OCR พร้อม — แตะเพื่ออ่าน" } catch (_: Exception) {}
-                }
-            } else {
-                api.recycle()
-                Log.e("Tess", "init() failed, will use ML Kit")
-                mainHandler.post {
-                    try { label()?.text = "⚠️ Thai OCR ล้มเหลว (ใช้ ML Kit แทน)" } catch (_: Exception) {}
-                }
-            }
-        } else {
-            mainHandler.post {
-                try { label()?.text = "⚠️ Download ล้มเหลว ใช้ ML Kit (ภาษาอังกฤษ)" } catch (_: Exception) {}
-            }
-        }
-    }
 
     // ── MediaProjection ────────────────────────────────────────────────────
 
@@ -251,6 +196,7 @@ class OverlayService : Service() {
         setupTouches()
 
         if (isAutoMode) startAutoOCR()
+        label()?.text = "✅ พร้อมใช้งาน — แตะเพื่ออ่าน"
     }
 
     private fun setupTouches() {
@@ -261,7 +207,6 @@ class OverlayService : Service() {
         val btnGhost = overlayView.findViewById<ImageButton>(R.id.btnGhost)
         val btnClose = overlayView.findViewById<ImageButton>(R.id.btnClose)
 
-        // ── Drag ──
         var ix=0; var iy=0; var tx=0f; var ty=0f; var moved=false
         drag.setOnTouchListener { _, e ->
             when (e.action) {
@@ -282,7 +227,6 @@ class OverlayService : Service() {
             }
         }
 
-        // ── Resize (corner bottom-right) ──
         var rw=0; var rh=0; var rtx=0f; var rty=0f
         resize.setOnTouchListener { _, e ->
             when (e.action) {
@@ -316,7 +260,6 @@ class OverlayService : Service() {
     }
 
     private fun applyGhost() {
-        // alpha=0 → invisible แต่ยังรับ touch ได้ (Android ไม่ block touch จาก alpha)
         overlayView.alpha = if (isGhost) 0f else 1f
     }
 
@@ -363,17 +306,16 @@ class OverlayService : Service() {
 
     private fun triggerOCR(autoCallback: Boolean = false) {
         if (imageReader == null) { label()?.text = "❌ Screen capture ไม่พร้อม"; return }
-        if (!isCapturing.compareAndSet(false, true)) return  // ป้องกัน overlap
+        if (!isCapturing.compareAndSet(false, true)) return
 
         if (!autoCallback) label()?.text = "🔍..."
 
-        // ซ่อน overlay ก่อน screenshot
         val prevAlpha = overlayView.alpha
         overlayView.alpha = 0f
 
         mainHandler.postDelayed({
             val full = acquireScreenshot()
-            overlayView.alpha = prevAlpha  // restore
+            overlayView.alpha = prevAlpha
 
             if (full == null) {
                 isCapturing.set(false)
@@ -382,24 +324,28 @@ class OverlayService : Service() {
             }
 
             val cropped = crop(full)
+            val image = InputImage.fromBitmap(cropped, 0)
 
-            if (tessReady.get()) {
-                executor.execute {
-                    val api = tessApi
-                    if (api == null) { isCapturing.set(false); return@execute }
-                    api.setImage(cropped)
-                    val raw = api.utF8Text?.trim() ?: ""
-                    api.clear()
-                    mainHandler.post { handleResult(raw, autoCallback) }
-                }
-            } else {
-                mlkitRecognizer.process(InputImage.fromBitmap(cropped, 0))
-                    .addOnSuccessListener { r -> handleResult(r.text.trim(), autoCallback) }
-                    .addOnFailureListener { e ->
-                        isCapturing.set(false)
-                        label()?.text = "❌ OCR: ${e.message}"
+            // ใช้ Thai recognizer ก่อน ถ้าได้ผลก็จบ ถ้าไม่ได้ fallback Latin
+            thaiRecognizer.process(image)
+                .addOnSuccessListener { result ->
+                    val text = result.text.trim()
+                    if (text.isNotEmpty()) {
+                        handleResult(text, autoCallback)
+                    } else {
+                        // fallback Latin
+                        latinRecognizer.process(image)
+                            .addOnSuccessListener { r -> handleResult(r.text.trim(), autoCallback) }
+                            .addOnFailureListener { e ->
+                                isCapturing.set(false)
+                                label()?.text = "❌ OCR: ${e.message}"
+                            }
                     }
-            }
+                }
+                .addOnFailureListener { e ->
+                    isCapturing.set(false)
+                    label()?.text = "❌ OCR: ${e.message}"
+                }
         }, 110)
     }
 
@@ -409,7 +355,6 @@ class OverlayService : Service() {
             if (!autoMode) label()?.text = "❌ ไม่พบข้อความ"
             return
         }
-        // Auto mode: พูดเฉพาะถ้าข้อความเปลี่ยน
         if (autoMode && text == lastText) return
         lastText = text
         label()?.text = "🔊 $text"
