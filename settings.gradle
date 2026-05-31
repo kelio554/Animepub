@@ -1,2 +1,10 @@
 rootProject.name = "SubtitleReader"
 include ':app'
+
+dependencyResolutionManagement {
+    repositories {
+        google()
+        mavenCentral()
+        maven { url 'https://jitpack.io' }
+    }
+}
