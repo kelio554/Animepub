@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center_horizontal"
+    android:padding="24dp"
+    android:background="#1A1A2E">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="📺 Subtitle Reader"
+        android:textColor="#FF6B35"
+        android:textSize="28sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="4dp"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="OCR ภาษาไทย + TTS"
+        android:textColor="#AAAAAA"
+        android:textSize="14sp"
+        android:layout_marginBottom="20dp"/>
+
+    <!-- Status -->
+    <TextView
+        android:id="@+id/statusText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="กำลังตรวจสอบ..."
+        android:textColor="#FFFFFF"
+        android:textSize="14sp"
+        android:gravity="center"
+        android:background="#2A2A4A"
+        android:padding="14dp"
+        android:layout_marginBottom="20dp"
+        android:lineSpacingExtra="3dp"/>
+
+    <!-- TTS Speed -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="#22FFFFFF"
+        android:padding="16dp"
+        android:layout_marginBottom="20dp">
+
+        <TextView
+            android:id="@+id/speedLabel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="ความเร็วเสียง: 1.00×"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp"
+            android:layout_marginBottom="8dp"/>
+
+        <SeekBar
+            android:id="@+id/speedSeekBar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="30"
+            android:progress="10"
+            android:progressTint="#FF6B35"
+            android:thumbTint="#FF6B35"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+            <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:text="0.5×" android:textColor="#888888" android:textSize="11sp"/>
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="1.0×" android:textColor="#888888" android:textSize="11sp"/>
+            <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:text="2.0×" android:textColor="#888888"
+                android:textSize="11sp" android:gravity="end"/>
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- Buttons -->
+    <Button
+        android:id="@+id/btnStart"
+        android:layout_width="200dp"
+        android:layout_height="52dp"
+        android:text="▶ Start"
+        android:textSize="17sp"
+        android:backgroundTint="#FF6B35"
+        android:layout_marginBottom="10dp"/>
+
+    <Button
+        android:id="@+id/btnStop"
+        android:layout_width="200dp"
+        android:layout_height="52dp"
+        android:text="⏹ Stop"
+        android:textSize="17sp"
+        android:backgroundTint="#CC3333"
+        android:layout_marginBottom="24dp"/>
+
+    <!-- Help -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="วิธีใช้:\n1. กด Start → อนุญาต permissions\n2. เปิดวิดีโอที่มีซับไทย\n3. ลากกล่องไปวางบนซับ\n4. แตะพื้นที่กล่อง = อ่าน 1 ครั้ง\n5. กด ▶ = Auto อ่านอัตโนมัติ\n6. กด 👁 = Ghost mode โปร่งใส\n7. ดึงมุมขวาล่าง = ปรับขนาด\n\n* ครั้งแรกจะ download Thai OCR ~14MB"
+        android:textColor="#888888"
+        android:textSize="12sp"
+        android:lineSpacingExtra="3dp"/>
+
+</LinearLayout>

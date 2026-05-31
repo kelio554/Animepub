@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/overlayRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <!-- Background (ซ่อนได้ผ่าน alpha ของ root) -->
+    <View
+        android:id="@+id/overlayBg"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/overlay_bg" />
+
+    <!-- Content -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <!-- Top toolbar: Drag handle + ปุ่ม -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="38dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <!-- พื้นที่ลาก (เต็มความกว้างที่เหลือ) -->
+            <View
+                android:id="@+id/dragHandle"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1" />
+
+            <!-- Manual OCR -->
+            <ImageButton
+                android:id="@+id/btnOcr"
+                android:layout_width="34dp"
+                android:layout_height="34dp"
+                android:src="@android:drawable/ic_menu_camera"
+                android:background="@android:color/transparent"
+                android:tint="#FFFFFF"
+                android:contentDescription="OCR" />
+
+            <!-- Auto mode -->
+            <ImageButton
+                android:id="@+id/btnAuto"
+                android:layout_width="34dp"
+                android:layout_height="34dp"
+                android:src="@android:drawable/ic_media_play"
+                android:background="@android:color/transparent"
+                android:tint="#888888"
+                android:alpha="0.45"
+                android:contentDescription="Auto" />
+
+            <!-- Ghost toggle -->
+            <ImageButton
+                android:id="@+id/btnGhost"
+                android:layout_width="34dp"
+                android:layout_height="34dp"
+                android:src="@android:drawable/ic_menu_view"
+                android:background="@android:color/transparent"
+                android:tint="#FFFFFF"
+                android:contentDescription="Ghost" />
+
+            <!-- Close -->
+            <ImageButton
+                android:id="@+id/btnClose"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:src="@android:drawable/ic_delete"
+                android:background="@android:color/transparent"
+                android:tint="#FF6B6B"
+                android:paddingEnd="4dp"
+                android:contentDescription="Close" />
+
+        </LinearLayout>
+
+        <!-- Text display -->
+        <TextView
+            android:id="@+id/statusLabel"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:text="👆 แตะเพื่ออ่าน"
+            android:textColor="#FFFFFF"
+            android:textSize="13sp"
+            android:maxLines="4"
+            android:ellipsize="end"
+            android:paddingStart="10dp"
+            android:paddingEnd="10dp"
+            android:paddingBottom="4dp"
+            android:gravity="center_vertical"
+            android:scrollbars="vertical" />
+
+    </LinearLayout>
+
+    <!-- Resize handle — มุมขวาล่าง -->
+    <View
+        android:id="@+id/resizeHandle"
+        android:layout_width="22dp"
+        android:layout_height="22dp"
+        android:layout_gravity="bottom|end"
+        android:background="@drawable/resize_handle"
+        android:contentDescription="Resize" />
+
+</FrameLayout>

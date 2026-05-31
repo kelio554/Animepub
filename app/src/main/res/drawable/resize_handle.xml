@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Bottom stripe -->
+    <item android:top="14dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#AAFFFFFF"/>
+            <corners android:topLeftRadius="2dp"/>
+        </shape>
+    </item>
+    <!-- Right stripe -->
+    <item android:start="14dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#AAFFFFFF"/>
+            <corners android:topLeftRadius="2dp"/>
+        </shape>
+    </item>
+    <!-- Corner dot -->
+    <item android:top="14dp" android:start="14dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#FFFFFFFF"/>
+        </shape>
+    </item>
+</layer-list>
